@@ -2,16 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 修复matplotlib在Streamlit Cloud的兼容性问题：
-import matplotlib
-matplotlib.use('agg')  # 添加在文件开头
-import matplotlib.pyplot as plt
-
-# 页面配置
-st.set_page_config(page_title="外企薪酬计算器", layout="wide")
-st.title("💰 外企薪酬计算器 (Python+Streamlit)")
-st.caption("软件工程专业作品 | 自动计算五险一金及个税")
-
 # 税率表（2025最新）
 TAX_BRACKETS = [0, 3000, 12000, 25000, 35000, 55000, 80000]
 TAX_RATES = [0.03, 0.1, 0.2, 0.25, 0.3, 0.35, 0.45]
@@ -24,6 +14,11 @@ CITY_PRESETS = {
     "广州": {"pension": 8.0, "medical": 2.0, "unemployment": 0.5, "injury": 0.2, "maternity": 0.0, "housing": 5.0},
     "深圳": {"pension": 8.0, "medical": 2.0, "unemployment": 0.3, "injury": 0.2, "maternity": 0.0, "housing": 5.0}
 }
+
+# 页面配置
+st.set_page_config(page_title="外企薪酬计算器", layout="wide")
+st.title("💰 外企薪酬计算器 (Python+Streamlit)")
+st.caption("软件工程专业作品 | 自动计算五险一金及个税")
 
 # 侧边栏输入
 with st.sidebar:
@@ -113,18 +108,19 @@ with col2:
     st.dataframe(pd.DataFrame(tax_data), hide_index=True)
     st.metric("税后工资", f"¥{net_salary:,.2f}", delta_color="inverse")
 
-# 工资构成饼图
+# ============== 修改后的工资构成分析 ==============
 st.subheader("工资构成分析")
-if net_salary > 0:  # 确保分母不为零
-    fig, ax = plt.subplots()
-    labels = ["税后工资", "五险一金", "个人所得税"]
-    sizes = [net_salary, total_insurance, income_tax]
-    colors = ["#4CAF50", "#2196F3", "#FF5252"]
-    ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-    ax.axis('equal')
-    st.pyplot(fig)
+if base_salary > 0:
+    # 使用进度条直观展示各项占比
+    st.progress(min(1.0, net_salary/base_salary), text=f"税后工资: ¥{net_salary:,.2f} ({net_salary/base_salary*100:.1f}%)")
+    st.progress(min(1.0, total_insurance/base_salary), text=f"五险一金: ¥{total_insurance:,.2f} ({total_insurance/base_salary*100:.1f}%)")
+    st.progress(min(1.0, income_tax/base_salary), text=f"个人所得税: ¥{income_tax:,.2f} ({income_tax/base_salary*100:.1f}%)")
+    
+    # 添加数值说明
+    st.caption(f"基本工资总额: ¥{base_salary:,.2f}")
 else:
-    st.warning("工资数据异常，无法生成图表")
+    st.warning("工资数据异常，无法生成分析")
+# ============== 修改结束 ==============
 
 # 专业说明和报告下载
 with st.expander("💡 技术说明与应用场景"):
@@ -133,7 +129,7 @@ with st.expander("💡 技术说明与应用场景"):
     - 实时响应参数变化，计算结果即时更新
     - 内置2025年中国最新个税算法
     - 自动适配不同城市社保政策
-    - 数据可视化展示工资构成
+    - 可视化展示工资构成
     
     **HR应用场景：**
     1. 新员工薪资方案快速测算
@@ -163,5 +159,10 @@ if st.button("📥 生成薪酬报告"):
     
     【最终收入】
     💰 税后工资：¥{net_salary:,.2f}
+    
+    【工资构成比例】
+    - 税后工资: {net_salary/base_salary*100:.1f}%
+    - 五险一金: {total_insurance/base_salary*100:.1f}%
+    - 个人所得税: {income_tax/base_salary*100:.1f}%
     """
     st.download_button("下载报告", report, file_name=f"{city}_薪资测算_{base_salary}元.txt")
