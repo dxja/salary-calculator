@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+
+# 修复matplotlib在Streamlit Cloud的兼容性问题：
+import matplotlib
+matplotlib.use('agg')  # 添加在文件开头
 import matplotlib.pyplot as plt
 
 # 页面配置
